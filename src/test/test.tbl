@@ -1,0 +1,16 @@
+location	codon	expect	predicted	confidence
+NC_004347;51	TAG	other	other	  0.9846
+NC_004347;63	TGA	other	other	  0.9846
+NC_004347;99	TAG	other	other	  0.9846
+NC_004347;159	TAG	other	stop	  0.7351
+NC_004347;201	TAA	other	other	  0.9846
+NC_004347;204	TAA	other	other	  0.9846
+NC_004347;207	TGA	other	other	  0.9846
+NC_004347;222	TAG	other	other	  0.9846
+NC_004347;237	TAA	other	other	  0.9846
+NC_004347;276	TAA	other	other	  0.9846
+NC_004347;300	TAG	other	stop	  0.9930
+NC_004347;354	TGA	other	other	  0.5446
+NC_004347;534	TAA	other	other	  0.8716
+NC_004347;549	TGA	other	other	  0.9846
+NC_004347;657	TAG	other	stop	  0.5096
