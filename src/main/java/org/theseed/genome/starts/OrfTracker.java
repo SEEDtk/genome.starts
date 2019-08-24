@@ -41,7 +41,7 @@ public class OrfTracker implements Iterable<OrfTracker.StopCodon> {
          * @param type			the predicted status of the codon ("other" or "stop")
          * @param confidence	the confidence of the prediction
          */
-        public StopCodon(int location, String codon, String type, double confidence) {
+        protected StopCodon(int location, String codon, String type, double confidence) {
             this.location = location;
             this.codon = codon.toLowerCase();
             if (type.contentEquals("other"))
@@ -122,6 +122,7 @@ public class OrfTracker implements Iterable<OrfTracker.StopCodon> {
          */
         public OrfIterator() {
             treeIter = OrfTracker.this.stopList.iterator();
+            OrfTracker.this.orfStop = null;
         }
 
         @Override
