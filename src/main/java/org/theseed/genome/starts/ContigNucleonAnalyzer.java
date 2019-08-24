@@ -65,4 +65,25 @@ public class ContigNucleonAnalyzer {
 		return retVal;
 	}
 
+	/**
+	 * @return the fractional GC content of a region in the specified sequence
+	 *
+	 * @param sequence		the sequence in question
+	 * @param endLocation	the location (1-based) past the end of the target region
+	 * @param length		the number of base pairs in the target region
+	 */
+	public static double gcContent(String sequence, int endLocation, int length) {
+		int gcCount = 0;
+		int endPosition = endLocation - 1;
+		for (int i = endPosition - length; i < endPosition; i++) {
+			switch (sequence.charAt(i)) {
+			case 'g':
+			case 'c':
+				gcCount++;
+				break;
+			}
+		}
+		return ((double) gcCount / length);
+	}
+
 }
