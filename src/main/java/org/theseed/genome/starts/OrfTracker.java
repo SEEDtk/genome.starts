@@ -170,7 +170,7 @@ public class OrfTracker implements Iterable<OrfTracker.StopCodon> {
      */
     protected void setOrfLength(StopCodon newStop, StopCodon oldStop) {
         if (oldStop == null) {
-            this.orfLength = newStop.location;
+            this.orfLength = (newStop.location - 1) / 3 * 3;
         } else {
             this.orfLength = newStop.location - oldStop.location - 3;
         }
