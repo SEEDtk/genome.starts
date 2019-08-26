@@ -87,6 +87,8 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
      */
     public static class StartCodon {
 
+        /** ID of the enclosing sequence */
+        private String contigId;
         /** position (1-based) of the codon */
         private int loc;
         /** array of values describing the codon's situation */
@@ -98,9 +100,17 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
          * @param loc	location of the start
          * @param data	array of double-precision values describing the environment of the start (will be cloned)
          */
-        protected StartCodon(int loc, double[] data) {
+        protected StartCodon(String contigId, int loc, double[] data) {
             this.loc = loc;
+            this.contigId = contigId;
             this.data = data.clone();
+        }
+
+        /**
+         * @return the ID of the sequence containing the start
+         */
+        public String getContigId() {
+            return contigId;
         }
 
         /**
@@ -115,6 +125,40 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
          */
         public double[] getData() {
             return data;
+        }
+
+        /**
+         * @return a tab-delimited string representation of the start and its data array
+         */
+        public String toString() {
+            StringBuilder retVal = new StringBuilder(13 * (OUTPUT_LEN + 1));
+            retVal.append(this.contigId + ";" + this.loc);
+            for (double datum : this.data) {
+                retVal.append('\t');
+                retVal.append(datum);
+            }
+            return retVal.toString();
+        }
+
+        /**
+         * @return the header string for an output file containing start codon descriptors
+         */
+        public static String header() {
+            String[] headers = new String[OUTPUT_LEN];
+            headers[GC_IDX] = "gc_content";
+            headers[ORF_LEN_IDX] = "orf_len";
+            headers[REGION_LEN_IDX] = "region_len";
+            headers[RBS_LEN_IDX] = "rbs_len";
+            headers[RBS_GAP_IDX] = "rbs_gap";
+            headers[STOP_CONFIDENCE_IDX] = "stop_conf";
+            for (int i = 0; i < STARTS.length; i++)
+                headers[START_CODON_IDX + i] = STARTS[i];
+            for (int i = 0; i < STOPS.length; i++)
+                headers[STOP_CODON_IDX + i] = STOPS[i];
+            for (int i = 0; i < AA_LIST.length(); i++)
+                headers[AA_PROFILE_IDX + i] = String.valueOf(AA_LIST.charAt(i));
+            String retVal = "location\t" + StringUtils.join(headers, '\t');
+            return retVal;
         }
 
     }
@@ -200,8 +244,11 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
         int total = 0;
         for (int i = startLocation - 1; i < endPosition; i += 3) {
             String codon = GENETIC_CODE_11.get(sequence.substring(i, i+3));
-            int idx = AA_LIST.indexOf(codon);
-            if (idx >= 0) counts[idx]++;
+            // We need to check for null, in case of ambiguity characters.
+            if (codon != null) {
+                int idx = AA_LIST.indexOf(codon);
+                if (idx >= 0) counts[idx]++;
+            }
             total++;
         }
         // Now we take the log of the count + epsilon / total.
@@ -215,6 +262,8 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     // FIELDS
     /** the contig being traversed */
     private String contig;
+    /** the ID of the contig */
+    private String contigId;
     /** position of the last possible start */
     private int lastPos;
     /** position (1-based) of the next start codon, or 0 if none exists */
@@ -231,11 +280,13 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     /**
      * Initialize this object for iterating through the potential starts in a contig.
      *
+     * @param seqId		the ID of the contig
      * @param sequence	the DNA sequence of the contig
      * @param tracker	the ORF tracker for the contig
      */
-    public StartCodonFinder(String sequence, ContigOrfTracker tracker) {
+    public StartCodonFinder(String seqId, String sequence, ContigOrfTracker tracker) {
         this.contig = sequence.toLowerCase();
+        this.contigId = seqId;
         this.orfTracker = tracker;
         // The last position is 6 before the end, but it is 1-based.
         this.lastPos = sequence.length() - 5;
@@ -311,7 +362,7 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     public StartCodon next() {
         StartCodon retVal = null;
         if (this.nextPos > 0) {
-            retVal = new StartCodon(this.nextPos, this.outputs);
+            retVal = new StartCodon(this.contigId, this.nextPos, this.outputs);
             this.findNextStart(this.nextPos);
         }
         return retVal;

@@ -27,6 +27,8 @@ public class GenomeProcessor implements ICommand {
     private boolean debug;
 
 
+
+
     /**
      * Parse command-line options to specify the parameters of this object.
      *

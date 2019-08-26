@@ -262,7 +262,7 @@ public class AppTest extends TestCase
         int confIdx = startReader.findField("confidence");
         int rbsIdx = startReader.findField("rbsLen");
         int rbsGapIdx = startReader.findField("rbsGap");
-        for (StartCodonFinder.StartCodon startFound : new StartCodonFinder(contigSeq, contigTracker)) {
+        for (StartCodonFinder.StartCodon startFound : new StartCodonFinder("NC1301", contigSeq, contigTracker)) {
             TabbedLineReader.Line line = startReader.next();
             int location = line.getInt(locIdx);
             assertThat("Location error", startFound.getLoc(), equalTo(line.getInt(locIdx)));
