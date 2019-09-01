@@ -44,10 +44,10 @@ public class OrfTracker implements Iterable<OrfTracker.StopCodon> {
         protected StopCodon(int location, String codon, String type, double confidence) {
             this.location = location;
             this.codon = codon.toLowerCase();
-            if (type.contentEquals("other"))
-                this.confidence = 1.0 - confidence;
-            else
+            if (type.contentEquals("stop"))
                 this.confidence = confidence;
+            else
+                this.confidence = 1.0 - confidence;
         }
 
         /**

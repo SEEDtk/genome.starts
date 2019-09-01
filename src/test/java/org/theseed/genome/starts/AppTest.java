@@ -115,6 +115,11 @@ public class AppTest extends TestCase
         stop1 = tracker.findOrf(60);
         assertThat(stop1.getLocation(), equalTo(102));
         assertThat(tracker.getOrfLength(), equalTo(63));
+        tracker.addStart(10, "other", 0.6);
+        tracker.addStart(22, "start", 0.9);
+        assertThat(tracker.getStartConfidence(10), closeTo(0.4, 1e-5));
+        assertThat(tracker.getStartConfidence(22), closeTo(0.9, 1e-5));
+        assertThat(tracker.getStartConfidence(102), equalTo(0.0));
     }
 
     /**
@@ -145,12 +150,18 @@ public class AppTest extends TestCase
         stop1 = tracker.findOrf(60);
         assertThat(stop1.getLocation(), equalTo(102));
         assertThat(tracker.getOrfLength(), equalTo(63));
+        // test the starts
+        assertThat(tracker.getStartConfidence(203), closeTo(0.85, 1e-5));
+        assertThat(tracker.getStartConfidence(303), closeTo(0.25, 1e-5));
+        assertThat(tracker.getStartConfidence(403), closeTo(0.35, 1e-5));
+        assertThat(tracker.getStartConfidence(503), equalTo(0.0));
         tracker = contigMap.get("NC_004347");
         assertNotNull(tracker);
         stop1 = tracker.findOrf(231);
         assertThat(stop1.getLocation(), equalTo(237));
         assertThat(stop1.getCodon(), equalTo("taa"));
         assertThat(stop1.getConfidence(), closeTo(0.0154, 0.00001));
+        assertThat(tracker.getStartConfidence(203), equalTo(0.0));
     }
 
     /**

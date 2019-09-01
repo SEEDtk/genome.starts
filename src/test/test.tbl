@@ -15,10 +15,13 @@ NC_004347;534	TAA	other	other	  0.8716
 NC_004347;549	TGA	other	other	  0.9846
 NC_004347;657	TAG	other	stop	  0.5096
 NC002112;112	tag	other	stop	0.1
+NC002112;203	atg	other	other	0.15
 NC002112;102	tga	other	stop	0.2
 NC002112;36	tag	other	other	0.3
+NC002112;303	gtg	start	start	0.25
 NC002112;333	tga	other	other	0.4
 NC002112;200	tga	other	stop	0.5
+NC002112;403	ttg	start	start	0.35
 NC002112;95	taa	other	other	0.6
 NC002112;38	taa	other	stop	0.7
 NC002112;40	TGA	other	other	0.8

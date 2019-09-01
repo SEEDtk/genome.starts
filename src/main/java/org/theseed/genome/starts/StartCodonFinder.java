@@ -73,11 +73,12 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     public static final int REGION_LEN_IDX = 2;
     public static final int RBS_LEN_IDX = 3;
     public static final int RBS_GAP_IDX = 4;
-    public static final int START_CODON_IDX = 5;		// 3 entries
-    public static final int STOP_CONFIDENCE_IDX = 8;
-    public static final int STOP_CODON_IDX = 9; 		// 3 entries
-    public static final int AA_PROFILE_IDX = 12; 		// 21 entries
-    public static final int OUTPUT_LEN = 12 + AA_COUNT;
+    public static final int START_CONFIDENCE_IDX = 5;
+    public static final int START_CODON_IDX = 6;		// 3 entries
+    public static final int STOP_CONFIDENCE_IDX = 9;
+    public static final int STOP_CODON_IDX = 10; 		// 3 entries
+    public static final int AA_PROFILE_IDX = 13; 		// 21 entries
+    public static final int OUTPUT_LEN = 13 + AA_COUNT;
 
     /**
      * This class encapsulates information about a start codon we find.
@@ -150,6 +151,7 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
             headers[REGION_LEN_IDX] = "region_len";
             headers[RBS_LEN_IDX] = "rbs_len";
             headers[RBS_GAP_IDX] = "rbs_gap";
+            headers[START_CONFIDENCE_IDX] = "start_conf";
             headers[STOP_CONFIDENCE_IDX] = "stop_conf";
             for (int i = 0; i < STARTS.length; i++)
                 headers[START_CODON_IDX + i] = STARTS[i];
@@ -173,6 +175,15 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
      */
     public static int checkStart(String sequence, int loc) {
         String codon = StringUtils.substring(sequence, loc - 1, loc + 2);
+        return testStart(codon);
+    }
+
+    /**
+     * @return the index of the specified start codon, or -1 if it is not a start
+     *
+     * @param codon		codon string to test
+     */
+    public static int testStart(String codon) {
         int retVal = STARTS.length - 1;
         while (retVal >= 0 && ! codon.contentEquals(STARTS[retVal])) retVal--;
         return retVal;
@@ -331,6 +342,7 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
                     data[REGION_LEN_IDX] = orf.getLocation() - pos;
                     data[RBS_LEN_IDX] = this.rbsLen;
                     data[RBS_GAP_IDX] = pos - (this.rbsPos + this.rbsLen);
+                    data[START_CONFIDENCE_IDX] = this.orfTracker.getStartConfidence(pos);
                     // Fill in the one-hot for the start.
                     for (int i = 0; i < 3; i++)
                         data[START_CODON_IDX + i] = (i == startType ? 1 : 0);
