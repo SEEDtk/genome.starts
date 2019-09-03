@@ -43,6 +43,16 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     /** the three stop codons */
     private static final String[] STOPS = { "taa", "tag", "tga" };
 
+    /** text of the Pribnow Box sequence */
+    private static final String PRIBNOW = "tataat";
+
+    /** range to check for Pribnow sequences */
+    private static final int PRIBNOW_FIRST = -12;
+    private static final int PRIBNOW_LAST = -8;
+
+    /** weights of the pribnow consensus sequence */
+    private static final double[] PRIBNOW_WEIGHTS = new double[] { 0.82, 0.89, 0.52, 0.59, 0.49, 0.89 };
+
     /** genetic code 11 translation table */
     @SuppressWarnings("serial")
     private static final HashMap<String, String> GENETIC_CODE_11 = new HashMap<String, String>() {{
@@ -63,7 +73,7 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     /** conversion table from amino acid codes to numbers */
     private static final String AA_LIST = "ACDEFGHIKLMNPQRSTVWXY";
     /** epsilon for keeping counts away from zero */
-    private static final double EPSILON = 1e-10;
+    // private static final double EPSILON = 1e-10;
     /** number of amino acids */
     private static final int AA_COUNT = AA_LIST.length();
 
@@ -77,8 +87,9 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     public static final int START_CODON_IDX = 6;		// 3 entries
     public static final int STOP_CONFIDENCE_IDX = 9;
     public static final int STOP_CODON_IDX = 10; 		// 3 entries
-    public static final int AA_PROFILE_IDX = 13; 		// 21 entries
-    public static final int OUTPUT_LEN = 13 + AA_COUNT;
+    public static final int PRIBNOW_SCORE_IDX = 13;
+    public static final int AA_PROFILE_IDX = 14; 		// 21 entries
+    public static final int OUTPUT_LEN = 14 + AA_COUNT;
 
     /**
      * This class encapsulates information about a start codon we find.
@@ -157,6 +168,7 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
                 headers[START_CODON_IDX + i] = STARTS[i];
             for (int i = 0; i < STOPS.length; i++)
                 headers[STOP_CODON_IDX + i] = STOPS[i];
+            headers[PRIBNOW_SCORE_IDX] = "pribnow_score";
             for (int i = 0; i < AA_LIST.length(); i++)
                 headers[AA_PROFILE_IDX + i] = String.valueOf(AA_LIST.charAt(i));
             String retVal = "location\t" + StringUtils.join(headers, '\t');
@@ -219,6 +231,24 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     }
 
     /**
+     * @return the strength of the Pribnow Box sequence at the current position, or 0 if there is none.
+     *
+     * @param sequence	the contig DNA sequence
+     * @param loc		the position (1-based) in the contig
+     */
+    public static double pribnowBox(String sequence, int loc) {
+        String hexamer = StringUtils.substring(sequence, loc - 1, loc + 5).toLowerCase();
+        double retVal = 0;
+        // Only proceed if there is enough data for a match.
+        if (hexamer.length() >= 6) {
+            for (int i = 0; i < 6; i++) {
+                if (hexamer.charAt(i) == PRIBNOW.charAt(i)) retVal += PRIBNOW_WEIGHTS[i];
+            }
+        }
+        return retVal;
+    }
+
+    /**
      * @return the fractional GC content of a region in the specified sequence
      *
      * @param sequence		the sequence in question
@@ -262,10 +292,10 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
             }
             total++;
         }
-        // Now we take the log of the count + epsilon / total.
+        // Now we take the  count / total as a percent.
         double[] retVal = new double[AA_COUNT];
         for (int i = 0; i < AA_COUNT; i++) {
-            retVal[i] = Math.log((counts[i] + EPSILON) / total);
+            retVal[i] = ((double) counts[i] * 100.0) / total;
         }
         return retVal;
     }
@@ -351,6 +381,16 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
                     String stop = orf.getCodon();
                     for (int i = 0; i < 3; i++)
                         data[STOP_CODON_IDX + i] = (stop.contentEquals(STOPS[i]) ? 1 : 0);
+                    // Check the possible pribnow boxes.  Note we have to insure we don't use a negative value
+                    // in the substring function.
+                    double pribnow_score = 0.0;
+                    for (int i = 0; i <= PRIBNOW_LAST - PRIBNOW_FIRST; i++) {
+                        int pribLoc = pos + PRIBNOW_FIRST + i;
+                        if (pribLoc >= 1) {
+                            pribnow_score += pribnowBox(this.contig, pribLoc);
+                        }
+                    }
+                    data[PRIBNOW_SCORE_IDX] = pribnow_score;
                     // Finally, fill in the amino acid profile.
                     double[] aaProfile = aaContent(this.contig, pos, orf.getLocation());
                     System.arraycopy(aaProfile, 0, data, AA_PROFILE_IDX, aaProfile.length);

@@ -208,6 +208,18 @@ public class AppTest extends TestCase
     }
 
     /**
+     * test Pribnow detection
+     */
+    public void testPribnow() {
+        String seq = "tatataataattctaatcaacct";
+        assertThat(StartCodonFinder.pribnowBox(seq, 1), closeTo(2.82, 1e-4));
+        assertThat(StartCodonFinder.pribnowBox(seq, 2), closeTo(0.49, 1e-4));
+        assertThat(StartCodonFinder.pribnowBox(seq, 3), closeTo(4.20, 1e-4));
+        assertThat(StartCodonFinder.pribnowBox(seq, 4), closeTo(0.59, 1e-4));
+        assertThat(StartCodonFinder.pribnowBox(seq, 5), closeTo(2.20, 1e-4));
+    }
+
+    /**
      * test start detection, AA counting, and GC content
      */
     public void testCoding() {
@@ -233,15 +245,13 @@ public class AppTest extends TestCase
               "gcaattgggtggaattgttatcagtaagtcagaccagatcacgtcgtctctacgatgacttttccatctgcaaagatcctgaccaccccaccactttctg" +
               "atacaacaatccctaaagcctgggtctcctgagtaattgcagcgatcgaaacatggcgagttccaaacccttttggcaccgtaactctgctggtatcaac" +
               "acgtacgtacgt";
-        double[] counts = new double[] { -3.91202300541148, -3.91202300541148, -3.40119738165216, -3.62434093296387,
-                                         -3.62434093296387, -3.7578723255866, -3.40119738165216, -2.99573227354732,
-                                         -3.50655789730887, -2.01490302053976, -3.7578723255866, -2.8705691305941,
-                                         -2.8705691305941, -3.0647251450338, -2.40794560864817, -2.1774219500371,
-                                         -2.99573227354732, -3.40119738165216, -3.62434093296387, -28.7296334045967,
-                                         -3.40119738165216 };
+        double[] counts = new double[] { 2.000000, 2.000000, 3.333333,  2.666667, 2.666667, 2.333333,
+                                         3.333333, 5.000000, 3.000000, 13.333333, 2.333333, 5.666667,
+                                         5.666667, 4.666667, 9.000000, 11.333333, 5.000000, 3.333333,
+                                         2.666667, 0.000000, 3.333333 };
         double[] aaVector = StartCodonFinder.aaContent(seq, 9, 909);
         for (int i = 0; i < 21; i++)
-            assertThat("Error in count " + i, aaVector[i], closeTo(counts[i], 1e-10));
+            assertThat("Error in count " + i, aaVector[i], closeTo(counts[i], 1e-5));
     }
 
     /**
@@ -294,6 +304,13 @@ public class AppTest extends TestCase
                     assertThat("Error expecting " + location, datum, equalTo(1.0));
                 }
             }
+            double pribScore = 0.0;
+            for (int i = 0; i < 5; i++) {
+                int pPos = location - 12 + i;
+                pribScore += StartCodonFinder.pribnowBox(contigSeq, pPos);
+            }
+            assertThat("Error expecting " + location, data[StartCodonFinder.PRIBNOW_SCORE_IDX],
+                    equalTo(pribScore));
             double regionLen = data[StartCodonFinder.REGION_LEN_IDX];
             double orfLen = data[StartCodonFinder.ORF_LEN_IDX];
             int orfEndPoint = startFound.getLoc() + (int) regionLen;
