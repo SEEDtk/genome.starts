@@ -9,7 +9,12 @@ import org.kohsuke.args4j.Option;
 import org.theseed.utils.ICommand;
 
 /**
- * main processing class
+ * This class produces a prediction file for input to the start-calling neural net.  The prediction file contains the
+ * input parameters expected by the neural net, but it also includes the expected prediction and the functional assignment
+ * for each start's protein.  This helps us to determine how useful the start-caller is.
+ *
+ * The positional parameters are the name of a GTO file containing the genome, and the name of the file containing the
+ * start and stop predictions from the start/stop predictor.
  *
  * @author Bruce Parrello
  *
