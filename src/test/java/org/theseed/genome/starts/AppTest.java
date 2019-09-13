@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.proteins.RoleMap;
 
 /**
  * Unit test for simple App.
@@ -328,6 +330,40 @@ public class AppTest extends TestCase
         TabbedLineReader.Line line = startReader.next();
         assertThat(line.getInt(locIdx), equalTo(-1));
         startReader.close();
+    }
+
+    /**
+     * Test the contig starts object.
+     *
+     * @throws IOException
+     * @throws NumberFormatException
+     */
+    public void testContigStarts() throws NumberFormatException, IOException {
+    	File gFile = new File("src/test", "372461.17.gto");
+    	Genome genome = new Genome(gFile);
+    	Map<String, ContigStarts> contigStartMap = ContigStarts.contigStartsMap(genome, '+', null);
+    	File dFile = new File("src/test", "starts.tbl");
+    	TabbedLineReader dataFile = new TabbedLineReader(dFile);
+    	for (TabbedLineReader.Line line : dataFile) {
+    		ContigStarts startMap = contigStartMap.get(line.get(0));
+    		String roles = startMap.getRoles(line.getInt(1));
+    		String expect = line.get(2);
+    		if (expect.contentEquals("x")) expect = null;
+    		assertThat(roles, equalTo(expect));
+    	}
+    	dataFile.close();
+    	// Now with mapped roles.
+    	RoleMap roleMap = RoleMap.load(new File("src/test", "roles.tbl"));
+    	contigStartMap = ContigStarts.contigStartsMap(genome, '+', roleMap);
+    	dataFile = new TabbedLineReader(new File("src/test", "starts2.tbl"));
+    	for (TabbedLineReader.Line line : dataFile) {
+    		ContigStarts startMap = contigStartMap.get(line.get(0));
+    		String roles = startMap.getRoles(line.getInt(1));
+    		String expect = line.get(2);
+    		if (expect.contentEquals("x")) expect = null;
+    		assertThat(roles, equalTo(expect));
+    	}
+    	dataFile.close();
     }
 
 }

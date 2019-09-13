@@ -8,8 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Random;
-
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -100,7 +98,6 @@ public class ContigProcessor implements ICommand {
                 }
                 // Load the genome directory.
                 this.inputDir = new GenomeDirectory(this.genomeDir);
-                new Random();
                 // We made it this far, we can run the application.
                 retVal = true;
             }
