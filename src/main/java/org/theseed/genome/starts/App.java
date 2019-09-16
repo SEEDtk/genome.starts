@@ -11,7 +11,8 @@ import org.theseed.utils.ICommand;
  *
  * 	train	generate a training set
  * 	predict	generate an input set for finding starts
- * 	test	gemerate an input set for verification
+ * 	test	generate an input set for verification
+ *  finish  compute final starts for each ORF
  *
  */
 public class App
@@ -32,6 +33,9 @@ public class App
             break;
         case "test" :
             processor = new GenomeProcessor();
+            break;
+        case "finish" :
+            processor = new FinishProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ": must be \"train\", \"test\", or \"predict\".");
