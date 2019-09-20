@@ -89,7 +89,7 @@ public class FinishProcessor implements ICommand {
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
+        // TODO find the best start in each ORF
 
     }
 
