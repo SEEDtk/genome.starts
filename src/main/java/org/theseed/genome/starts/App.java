@@ -38,7 +38,7 @@ public class App
             processor = new FinishProcessor();
             break;
         default :
-            throw new RuntimeException("Invalid command " + command + ": must be \"train\", \"test\", or \"predict\".");
+            throw new RuntimeException("Invalid command " + command + ": must be \"train\", \"test\", \"predict\", or \"finish\".");
         }
         boolean ok = processor.parseCommand(newArgs);
         if (ok) {
