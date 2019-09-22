@@ -49,7 +49,7 @@ public class ContigOrfTracker {
 
 
     /**
-     * Read a stop prediction file and return a mapping that provides access to the
+     * Read a start/stop prediction file and return a mapping that provides access to the
      * ContigOrfTracker for each contig by contig ID.
      *
      * @param inFile	input file containing the stop predictions for an entire genome
