@@ -18,6 +18,8 @@ import org.theseed.io.TabbedLineReader;
 import org.theseed.locations.Location;
 import org.theseed.utils.ICommand;
 
+// TODO test FinishProcessor
+
 /**
  * This process reads the output from the Combo neural net (rank starts and stops based on neighborhood) and the FancyStart neural net
  * (rank starts based on statistical characteristics) and picks the best-ranked start for each ORF.
