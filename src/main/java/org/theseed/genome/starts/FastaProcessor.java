@@ -13,13 +13,13 @@ public class FastaProcessor implements ICommand {
 
     @Override
     public boolean parseCommand(String[] args) {
-        // TODO command-line options for PREDICT case
+        // FUTURE command-line options for PREDICT case
         return false;
     }
 
     @Override
     public void run() {
-        // TODO execute PREDICT case
+        // FUTURE execute PREDICT case
 
     }
 
