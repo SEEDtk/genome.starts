@@ -270,7 +270,7 @@ public class StartCodonFinder implements Iterator<StartCodonFinder.StartCodon>, 
     }
 
     /**
-     * @return the amino acid profile of a region in the specified sequence, in the form of log fraction
+     * @return the amino acid profile of a region in the specified sequence, in the form of percent
      *
      * @param sequence		the sequence in question
      * @param startLocation	the location (1-based) of the start of the target region
