@@ -5,6 +5,7 @@ package org.theseed.genome.starts;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,12 +14,9 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
-import org.theseed.io.BalancedOutputStream;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.locations.Location;
 import org.theseed.utils.ICommand;
-
-// FUTURE test FinishProcessor
 
 /**
  * This process reads the output from the Combo neural net (rank starts and stops based on neighborhood) and the FancyStart neural net
@@ -40,6 +38,8 @@ public class FinishProcessor implements ICommand {
         private double confidence;
         /** location of the start in the contig */
         private int location;
+        /** ORF location */
+        private Location orfLoc;
 
         /**
          * Create a new start record.
@@ -47,10 +47,11 @@ public class FinishProcessor implements ICommand {
          * @param line	original input line for the start
          * @param loc	location of the start in the contig
          */
-        public GoodStart(TabbedLineReader.Line line, int loc) {
+        public GoodStart(TabbedLineReader.Line line, int loc, Location orfLoc) {
             this.startLine = line;
             this.confidence = line.getDouble(confColumn);
             this.location = loc;
+            this.orfLoc = orfLoc;
         }
 
         /**
@@ -61,18 +62,27 @@ public class FinishProcessor implements ICommand {
          *
          * @return the input line for the worse start.
          */
-        public String merge(TabbedLineReader.Line line, int loc) {
+        public GoodStart merge(TabbedLineReader.Line line, int loc, Location orfLoc) {
             // We default to returning the new location.
-            TabbedLineReader.Line retVal = line;
+            GoodStart retVal;
+            GoodStart buffer = new GoodStart(line, loc, orfLoc);
             double conf = line.getDouble(confColumn);
             if (conf > this.confidence || conf == this.confidence && loc < this.location) {
                 // Here the new location is better. Return the old one and store the new one.
-                retVal = this.startLine;
+                buffer.startLine = this.startLine;
+                buffer.confidence = this.confidence;
+                buffer.location = this.location;
+                buffer.orfLoc = this.orfLoc;
+                retVal = buffer;
                 this.startLine = line;
                 this.confidence = conf;
                 this.location = loc;
+                this.orfLoc = orfLoc;
+            } else {
+                // Here the old location is better.  Return the new one and keep this one in place.
+                retVal = buffer;
             }
-            return retVal.getAll();
+            return retVal;
         }
 
         /**
@@ -82,9 +92,37 @@ public class FinishProcessor implements ICommand {
             return startLine.getAll();
         }
 
+        /**
+         * @return the confidence
+         */
+        public double getConfidence() {
+            return confidence;
+        }
 
+        /**
+         * @return the start location
+         */
+        public int getLocation() {
+            return location;
+        }
+
+        /**
+         * @return the contig ID
+         */
+        public String getContig() {
+            return orfLoc.getContigId();
+        }
+
+        /**
+         * @return the stop location
+         */
+        public int getStopLoc() {
+            return orfLoc.getEnd();
+        }
 
     }
+
+
     // FIELDS
     /** map of contig IDs to ORFs */
     private Map<String, ContigOrfTracker> contigMap;
@@ -97,10 +135,52 @@ public class FinishProcessor implements ICommand {
     /** input column containing the prediction */
     private int predColumn;
     /** output stream */
-    private BalancedOutputStream outStream;
+    private PrintWriter outStream;
     /** map of ORFs to best starts */
     private Map<Location, GoodStart> startMap;
+    /** writer for output */
+    private Write writer;
 
+    // OUTPUT WRITERS
+
+    private abstract class Write {
+
+        public abstract void header();
+
+        public abstract void dataLine(String mode, GoodStart start);
+
+    }
+
+    private class NormalWrite extends Write {
+
+        @Override
+        public void header() {
+            outStream.println("final\t" + startStream.header());
+        }
+
+        @Override
+        public void dataLine(String mode, GoodStart start) {
+            outStream.println(mode + "\t" + start.getStartLine());
+        }
+
+    }
+
+    private class AltWriter extends Write {
+
+        @Override
+        public void header() {
+            outStream.println("contig\tstart\tstop\tconfidence\tstrand\ttype");
+        }
+
+        @Override
+        public void dataLine(String mode, GoodStart start) {
+            if (mode.contentEquals("start")) {
+                outStream.format("%s\t%d\t%d\t%8.6f\t+\tCDS%n", start.getContig(),
+                        start.getLocation(), start.getStopLoc(), start.getConfidence());
+            }
+        }
+
+    }
 
     // COMMAND LINE
 
@@ -111,6 +191,10 @@ public class FinishProcessor implements ICommand {
     /** TRUE if we want progress messages */
     @Option(name="-v", aliases={"--verbose", "--debug"}, usage="display progress on STDERR")
     private boolean debug;
+
+    /** TRUE if we want the alternate output format */
+    @Option(name="-a", aliases={"--alt"}, usage="alternate output format with ORF data")
+    private boolean altFormat;
 
     @Argument(index=0, metaVar="comboOutFile", usage="output file from start/stop caller")
     private File startStopFile;
@@ -142,10 +226,12 @@ public class FinishProcessor implements ICommand {
                 // Read the start/stop file to compute the ORFs.
                 if (this.debug) System.err.println("Reading ORFs from " + this.startStopFile);
                 this.contigMap = ContigOrfTracker.readPredictionFile(this.startStopFile);
+                // Create the writer.
+                this.writer = (this.altFormat ? this.new AltWriter() : this.new NormalWrite());
                 // Open the start file to begin input and initialize the output file.
                 this.startStream = new TabbedLineReader(this.startFile);
-                this.outStream = new BalancedOutputStream(0.0, System.out);
-                this.outStream.writeImmediate("final", this.startStream.header());
+                this.outStream = new PrintWriter(System.out);
+                this.writer.header();
                 // Find the key input columns.
                 this.confColumn = this.startStream.findField("confidence");
                 this.locColumn = this.startStream.findField("location");
@@ -169,39 +255,42 @@ public class FinishProcessor implements ICommand {
     public void run() {
         // First we read all the starts, remembering the good ones.
         for (TabbedLineReader.Line startLine : this.startStream) {
+            // Parse the location for this start.  The first part (0) is the contig, the second
+            // (1) is the position.
+            String[] locParts = StringUtils.split(startLine.get(locColumn), ';');
+            // Find the ORF containing this start and form a region from it.
+            ContigOrfTracker contigOrfs = this.contigMap.get(locParts[0]);
+            int location = Integer.parseInt(locParts[1]);
+            OrfTracker.StopCodon orfStop = contigOrfs.findOrf(location);
+            Location orfLoc = null;
+            if (orfStop != null) {
+                // Form a location from the ORF.
+                int origin = orfStop.getLocation() - contigOrfs.getOrfLength() + 1;
+                orfLoc = Location.create(locParts[0], "+", origin, orfStop.getLocation());
+            }
             // Is this a good start?
             String prediction = startLine.get(predColumn);
-            if (prediction.contentEquals("other")) {
+            if (prediction.contentEquals("other") || orfLoc == null) {
                 // No. Write it out.
-                this.outStream.write("other", startLine.getAll());
+                this.writer.dataLine("other", new GoodStart(startLine, location, orfLoc));
             } else {
-                // Parse the location for this start.  The first part (0) is the contig, the second
-                // (1) is the position.
-                String[] locParts = StringUtils.split(startLine.get(locColumn), ';');
-                // Find the ORF containing this start and form a region from it.
-                ContigOrfTracker contigOrfs = this.contigMap.get(locParts[0]);
-                int location = Integer.parseInt(locParts[1]);
-                OrfTracker.StopCodon orfStop = contigOrfs.findOrf(location);
-                if (orfStop != null) {
-                    // Form a location from the ORF.
-                    int origin = orfStop.getLocation() - contigOrfs.getOrfLength() + 1;
-                    Location orfLoc = Location.create(locParts[0], "+", origin, orfStop.getLocation());
-                    // Get the best start for this ORF.
-                    GoodStart bestStart = this.startMap.get(orfLoc);
-                    if (bestStart == null) {
-                        // This is our first appearance of the ORF.  The new start is automatically the best.
-                        this.startMap.put(orfLoc, new GoodStart(startLine, location));
-                    } else {
-                        // Pick the better start and output the other.
-                        String worseLine = bestStart.merge(startLine, location);
-                        this.outStream.write("other", worseLine);
-                    }
+                // Get the best start for this ORF.
+                GoodStart bestStart = this.startMap.get(orfLoc);
+                if (bestStart == null) {
+                    // This is our first appearance of the ORF.  The new start is automatically the best.
+                    this.startMap.put(orfLoc, new GoodStart(startLine, location, orfLoc));
+                } else {
+                    // Pick the better start and output the other.
+                    GoodStart worseStart = bestStart.merge(startLine, location, orfLoc);
+                    this.writer.dataLine("other", worseStart);
                 }
             }
         }
         // All the starts have been processed.  The ones remaining are the good ones.
         for (GoodStart bestStart : this.startMap.values()) {
-            this.outStream.write("start", bestStart.getStartLine());
+            this.writer.dataLine("start", bestStart);
         }
+        this.outStream.close();
     }
+
 }
