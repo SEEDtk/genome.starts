@@ -17,7 +17,7 @@ import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
 import org.theseed.io.BalancedOutputStream;
 import org.theseed.io.Shuffler;
-import org.theseed.locations.LocationList;
+import org.theseed.locations.DiscreteLocationList;
 import org.theseed.utils.ICommand;
 
 /**
@@ -127,7 +127,7 @@ public class ContigProcessor implements ICommand {
                 // Get the stop prediction file.
                 File stopFile = new File(this.genomeDir, genome.getId() + ".stops.tbl");
                 Map<String, ContigOrfTracker> contigMap = ContigOrfTracker.readPredictionFile(stopFile);
-                Map<String, LocationList> locMap = LocationList.createGenomeCodingMap(genome);
+                Map<String, DiscreteLocationList> locMap = DiscreteLocationList.createGenomeCodingMap(genome);
                 // Now loop through the contigs, accumulating starts.
                 int cCounter = 0;
                 for (Contig contig : genome.getContigs()) {
@@ -138,13 +138,13 @@ public class ContigProcessor implements ICommand {
                         if (this.debug) System.err.format("Skipping contig %s in genome %s-- no stops.%n", contig.getId(), genome.getId());
                     } else {
                         if (this.debug) System.err.format("Processing contig #%d %s in genome #%d %s.%n", cCounter, contig.getId(), gCounter, genome.getId());
-                        LocationList contigLocs = locMap.get(contig.getId());
+                        DiscreteLocationList contigLocs = locMap.get(contig.getId());
                         // Loop through the start codons, buffering.  We write all the good starts immediately, and then the
                         // specified maximum number of fakes.
                         StartCodonFinder startFinder = new StartCodonFinder(contig.getId(), contig.getSequence(), orfTracker);
                         for (StartCodonFinder.StartCodon start : startFinder) {
-                            LocationList.Edge type = contigLocs.isEdge(start.getLoc(), false);
-                            if (type == LocationList.Edge.START)
+                            DiscreteLocationList.Edge type = contigLocs.isEdge(start.getLoc(), false);
+                            if (type == DiscreteLocationList.Edge.START)
                                 outStream.write("start", start.toString());
                             else
                                 buffer.add(start);
