@@ -94,7 +94,7 @@ public class GenomeProcessor implements ICommand {
             		if (debug) System.err.println("Functional assignments will be output.");
             	} else {
             		this.roleMap = RoleMap.load(this.roleFile);
-            		if (debug) System.err.format("%d roles loaded from %s%n", this.roleMap.size(),
+            		if (debug) System.err.format("%d roles loaded from %s%n", this.roleMap.fullSize(),
             				this.roleFile);
             	}
                 // Load the genome.
