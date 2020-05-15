@@ -36,15 +36,15 @@ import org.theseed.utils.ICommand;
  */
 public class GenomeProcessor implements ICommand {
 
-	// FIELDS
-	/** map of role IDs to role names, or NULL if the output is just to contain functions */
-	private RoleMap roleMap;
-	/** genome loaded from the GTO file */
-	private Genome genome;
-	/** map from contig IDs to ORF trackers */
-	private Map<String, ContigOrfTracker> orfTrackerMap;
-	/** map from starts to roles */
-	private Map<String, ContigStarts> startRoleMap;
+    // FIELDS
+    /** map of role IDs to role names, or NULL if the output is just to contain functions */
+    private RoleMap roleMap;
+    /** genome loaded from the GTO file */
+    private Genome genome;
+    /** map from contig IDs to ORF trackers */
+    private Map<String, ContigOrfTracker> orfTrackerMap;
+    /** map from starts to roles */
+    private Map<String, ContigStarts> startRoleMap;
 
     // COMMAND LINE
 
@@ -88,26 +88,26 @@ public class GenomeProcessor implements ICommand {
             if (this.help) {
                 parser.printUsage(System.err);
             } else {
-            	// Create the role map.
-            	if (this.roleFile == null) {
-            		this.roleMap = null;
-            		if (debug) System.err.println("Functional assignments will be output.");
-            	} else {
-            		this.roleMap = RoleMap.load(this.roleFile);
-            		if (debug) System.err.format("%d roles loaded from %s%n", this.roleMap.fullSize(),
-            				this.roleFile);
-            	}
+                // Create the role map.
+                if (this.roleFile == null) {
+                    this.roleMap = null;
+                    if (debug) System.err.println("Functional assignments will be output.");
+                } else {
+                    this.roleMap = RoleMap.load(this.roleFile);
+                    if (debug) System.err.format("%d roles loaded from %s%n", this.roleMap.fullSize(),
+                            this.roleFile);
+                }
                 // Load the genome.
-            	this.genome = new Genome(this.genomeFile);
-            	if (debug) System.err.format("%s loaded from file %s%n", this.genome,
-            			this.genomeFile);
-            	// Load the stop prediction file.
-            	this.orfTrackerMap = ContigOrfTracker.readPredictionFile(this.startStopFile);
-            	if (debug) System.err.println("ORF predictions loaded from " +
-            			this.startStopFile + ".");
-            	// Load the role maps.
-            	this.startRoleMap = ContigStarts.contigStartsMap(this.genome, '+', this.roleMap);
-            	if (debug) System.err.println("Start roles computed.");
+                this.genome = new Genome(this.genomeFile);
+                if (debug) System.err.format("%s loaded from file %s%n", this.genome,
+                        this.genomeFile);
+                // Load the stop prediction file.
+                this.orfTrackerMap = ContigOrfTracker.readPredictionFile(this.startStopFile);
+                if (debug) System.err.println("ORF predictions loaded from " +
+                        this.startStopFile + ".");
+                // Load the role maps.
+                this.startRoleMap = ContigStarts.contigStartsMap(this.genome, '+', this.roleMap);
+                if (debug) System.err.println("Start roles computed.");
                 // We made it this far, we can run the application.
                 retVal = true;
             }
@@ -122,28 +122,28 @@ public class GenomeProcessor implements ICommand {
     }
 
     public void run() {
-    	// Start the output file.
-    	System.out.println(StartCodonFinder.StartCodon.header() + "\texpect\troles");
-    	// Loop through the contigs.
-    	for (Contig contig : this.genome.getContigs()) {
-    		String contigId = contig.getId();
-    		if (debug) System.err.println("Processing contig " + contigId);
-    		ContigStarts roleMapper = this.startRoleMap.get(contigId);
-    		ContigOrfTracker orfTracker = this.orfTrackerMap.get(contigId);
-    		String contigSeq = contig.getSequence();
-    		StartCodonFinder startFinder = new StartCodonFinder(contigId, contigSeq, orfTracker);
-    		// Loop through the starts in the contig.
-    		for (StartCodonFinder.StartCodon start : startFinder) {
-    			String expect;
-    			String roles = roleMapper.getRoles(start.getLoc());
-    			if (roles == null) {
-    				expect = "other";
-    				roles = "";
-    			} else {
-    				expect = "start";
-    			}
-    			System.out.println(start.toString() + "\t" + expect + "\t" + roles);
-    		}
-    	}
+        // Start the output file.
+        System.out.println(StartCodonFinder.StartCodon.header() + "\texpect\troles");
+        // Loop through the contigs.
+        for (Contig contig : this.genome.getContigs()) {
+            String contigId = contig.getId();
+            if (debug) System.err.println("Processing contig " + contigId);
+            ContigStarts roleMapper = this.startRoleMap.get(contigId);
+            ContigOrfTracker orfTracker = this.orfTrackerMap.get(contigId);
+            String contigSeq = contig.getSequence();
+            StartCodonFinder startFinder = new StartCodonFinder(contigId, contigSeq, orfTracker);
+            // Loop through the starts in the contig.
+            for (StartCodonFinder.StartCodon start : startFinder) {
+                String expect;
+                String roles = roleMapper.getRoles(start.getLoc());
+                if (roles == null) {
+                    expect = "other";
+                    roles = "";
+                } else {
+                    expect = "start";
+                }
+                System.out.println(start.toString() + "\t" + expect + "\t" + roles);
+            }
+        }
     }
 }
